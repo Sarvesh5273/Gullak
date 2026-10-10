@@ -1,0 +1,11 @@
+{
+  "packageName": "com.gullak.app",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "minSdk": 24,
+  "bytes": 51335335,
+  "sha256": "ee849161fcf6b1c24a5ad917fa4c5ef144259c5109a23b7de5c90fd1e27078d2",
+  "signerSha256": "64:EA:03:35:9E:57:63:7A:15:40:E4:19:8E:36:AF:15:B9:4A:81:0C:6C:8A:BE:19:8E:CC:3D:DA:26:99:0B:0B",
+  "downloadPath": "/api/downloads/gullak.apk",
+  "publishedAt": "2026-10-10T11:45:14.340Z"
+}

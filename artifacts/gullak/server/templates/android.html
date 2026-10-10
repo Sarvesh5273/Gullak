@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gullak for Android (testnet demo)</title>
+    <meta name="description" content="Download the Gullak Android app, a Monad testnet demo. Test tokens only; no real money moves." />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #fbf4ea;
+        --card: #fffcf7;
+        --ink: #2b1d14;
+        --muted: #7a6656;
+        --clay: #a9471f;
+        --clay-deep: #7e3215;
+        --marigold: #f2a33a;
+        --warning-soft: #fcebcb;
+        --border: #e8d8c3;
+        --secondary: #f3e5d3;
+        --success: #2f7d4f;
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 16px/1.55 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main { max-width: 600px; margin: 0 auto; padding: 28px 20px 48px; }
+      a { color: var(--clay); text-underline-offset: 2px; }
+      a:focus-visible, summary:focus-visible { outline: 3px solid var(--marigold); outline-offset: 3px; border-radius: 6px; }
+      h1, h2 { font-family: Fraunces, Georgia, "Times New Roman", serif; font-weight: 600; line-height: 1.2; margin: 0; }
+      h1 { font-size: 34px; margin-top: 14px; }
+      h2 { font-size: 22px; margin-bottom: 12px; }
+      .brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .wordmark { display: inline-flex; align-items: center; gap: 8px; font: 700 20px Fraunces, Georgia, serif; color: var(--ink); text-decoration: none; }
+      .coin { width: 22px; height: 22px; border-radius: 50%; background: var(--marigold); box-shadow: inset 0 0 0 4px #f7c374; }
+      .badge {
+        display: inline-block; padding: 5px 11px; border-radius: 999px;
+        background: var(--ink); color: #fff8f0;
+        font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+      }
+      .lede { color: var(--muted); font-size: 17px; margin: 8px 0 20px; }
+      .notice {
+        background: var(--warning-soft); border: 1px solid #f0d49c; border-radius: 18px;
+        padding: 16px 18px; margin-bottom: 20px;
+      }
+      .notice strong { display: block; margin-bottom: 4px; }
+      .notice ul { margin: 6px 0 0; padding-left: 20px; }
+      .download { text-align: center; margin: 24px 0 8px; }
+      .button {
+        display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+        width: 100%; max-width: 360px; min-height: 56px; padding: 14px 24px;
+        background: var(--clay); color: #fff8f0; border-radius: 18px;
+        font-size: 18px; font-weight: 600; text-decoration: none;
+      }
+      .button:hover { background: var(--clay-deep); }
+      .meta { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+      .alt { text-align: center; font-size: 15px; margin: 6px 0 28px; }
+      section { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; }
+      ol.steps { list-style: none; counter-reset: step; margin: 0; padding: 0; }
+      ol.steps > li { counter-increment: step; position: relative; padding: 0 0 14px 44px; }
+      ol.steps > li:last-child { padding-bottom: 0; }
+      ol.steps > li::before {
+        content: counter(step); position: absolute; left: 0; top: 0;
+        width: 30px; height: 30px; border-radius: 50%;
+        background: var(--secondary); color: var(--clay-deep);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 14px;
+      }
+      ol.steps b { font-weight: 600; }
+      .hint { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+      ul.reqs { margin: 0; padding-left: 20px; }
+      ul.reqs li { margin-bottom: 4px; }
+      details summary { cursor: pointer; font-weight: 600; }
+      dl { margin: 12px 0 0; }
+      dt { font-size: 13px; color: var(--muted); margin-top: 10px; }
+      dd { margin: 2px 0 0; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+      footer { color: var(--muted); font-size: 13px; text-align: center; margin-top: 28px; }
+      @media (min-width: 640px) {
+        main { padding-top: 48px; }
+        h1 { font-size: 42px; }
+        section { padding: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="brand">
+        <a class="wordmark" href="WEB_APP_URL_PLACEHOLDER"><span class="coin" aria-hidden="true"></span>Gullak</a>
+        <span class="badge">TESTNET DEMO</span>
+      </div>
+
+      <h1>Gullak for Android</h1>
+      <p class="lede">A family money pot. Sign in with a passkey, hold dollars, and send them to family in about a second, with no network fees to pay.</p>
+
+      <div class="notice" role="note">
+        <strong>This is a hackathon demo on Monad testnet. No real money moves.</strong>
+        <ul>
+          <li>Balances are test dollars (AUSD on Monad testnet) with no cash value.</li>
+          <li>“Add money” hands out test dollars. “Send to UPI” settles on testnet, but no rupees are paid out.</li>
+          <li>Rupee amounts are indicative, from daily public exchange rates.</li>
+        </ul>
+      </div>
+
+      <div class="download">
+        <a class="button" href="DOWNLOAD_URL_PLACEHOLDER" download="gullak.apk">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download APK
+        </a>
+        <p class="meta">Version VERSION_PLACEHOLDER · SIZE_PLACEHOLDER MB · Android 9 or newer</p>
+      </div>
+      <p class="alt">On an iPhone or a computer? <a href="WEB_APP_URL_PLACEHOLDER">Use the web app instead</a>.</p>
+
+      <section aria-labelledby="needs">
+        <h2 id="needs">You’ll need</h2>
+        <ul class="reqs">
+          <li>An Android phone running Android 9 or newer, with Google Play services.</li>
+          <li>A screen lock (fingerprint, face, PIN or pattern) and a Google account on the phone. Your passkey is saved in Google Password Manager.</li>
+          <li>A 64-bit ARM phone (nearly every current phone). x86 emulators and old 32-bit phones can’t install it.</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="install">
+        <h2 id="install">Install</h2>
+        <ol class="steps">
+          <li><b>Tap Download APK</b> on this page, on the phone.
+            <span class="hint">Chrome may warn that the file might be harmful. Tap <b>Download anyway</b>.</span></li>
+          <li><b>Open the file.</b> Tap the download notification, or find <b>gullak.apk</b> in Files › Downloads.</li>
+          <li><b>Allow installs from your browser</b> if Android asks: tap <b>Settings</b>, turn on <b>Allow from this source</b>, then go back.
+            <span class="hint">You can switch this off again after installing.</span></li>
+          <li><b>Tap Install.</b>
+            <span class="hint">Google Play Protect may say it doesn’t recognise the app, because it isn’t from the Play Store. Tap <b>More details</b>, then <b>Install anyway</b>. If it offers to scan the app, that’s fine too.</span>
+            <span class="hint">If Android says “App not installed”, uninstall any older Gullak test build first, then try again.</span></li>
+          <li><b>Open Gullak.</b></li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="try">
+        <h2 id="try">Try it</h2>
+        <ol class="steps">
+          <li><b>Create your account</b> with a passkey (your screen lock) and pick an @handle. No password, no seed phrase.</li>
+          <li><b>Add money.</b> Choose $10 and confirm. Test dollars land in a few seconds.</li>
+          <li><b>Send to an @handle.</b> To see both sides, open the <a href="WEB_APP_URL_PLACEHOLDER">web app</a> on a computer or another phone, create a second account, and send between the two.</li>
+          <li><b>Send to UPI.</b> Send to any UPI ID. It settles on testnet; the rupee payout itself is simulated.</li>
+        </ol>
+        <p class="meta">Every receipt links to the transaction on the Monad testnet explorer. Daily limits protect the shared test budget, so if something says it’s paused, try again later.</p>
+      </section>
+
+      <section>
+        <details>
+          <summary>Check the download (optional)</summary>
+          <dl>
+            <dt>Package</dt>
+            <dd>PACKAGE_PLACEHOLDER</dd>
+            <dt>APK SHA-256</dt>
+            <dd>APK_SHA256_PLACEHOLDER</dd>
+            <dt>Signing certificate SHA-256</dt>
+            <dd>SIGNER_SHA256_PLACEHOLDER</dd>
+          </dl>
+          <p class="meta">The same certificate is listed in this site’s <a href="/.well-known/assetlinks.json">assetlinks.json</a>, which is what lets the app use passkeys on this domain.</p>
+        </details>
+      </section>
+
+      <footer>Built for Monad Metropolis · Runs on Monad testnet · Test tokens only</footer>
+    </main>
+  </body>
+</html>

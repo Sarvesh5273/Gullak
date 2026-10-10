@@ -1,0 +1,24 @@
+{
+  "name": "@workspace/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "hello": "tsx ./src/hello.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "operator": "tsx ./src/operator.ts",
+    "smoke": "tsx ./src/smoke.ts",
+    "e2e-web": "tsx ./src/e2e-web.ts",
+    "restart-check": "tsx ./src/restart-check.ts",
+    "publish-apk": "tsx ./src/publish-apk.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@workspace/gullak-core": "workspace:*",
+    "tsx": "catalog:",
+    "viem": "2.57.3"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "8.2.0"
+  }
+}

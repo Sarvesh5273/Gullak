@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Gullak"
+description = "Gullak is a shared family money app for families split across borders. Family members sign up with a passkey (no seed phrase), hold a dollar balance in AUSD on Monad, add money, send it instantly to each other with gas paid by the app, and cash out. Built for people who don't think of themselves as crypto users."
+version = "1.0.0"
+id = "artifacts/gullak"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 19125
+
+[services.development]
+run = "pnpm --filter @workspace/gullak run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gullak", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/gullak", "run", "serve" ]
+
+[services.env]
+PORT = "19125"
+BASE_PATH = "/"

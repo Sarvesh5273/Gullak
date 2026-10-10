@@ -1,0 +1,771 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: >
+    Gullak API. Accounts are passkey-derived EOAs held only on the user's device.
+    Authenticated endpoints take a short-lived bearer token: an EIP-191 statement
+    signed by the account (see lib/gullak-core/src/auth.ts). All money amounts are
+    AUSD base units (6 decimals) encoded as integer strings.
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: config
+    description: Public network and service configuration
+  - name: members
+    description: Gullak member profiles
+  - name: money
+    description: Balances, activity, transfers and add-money
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /config:
+    get:
+      operationId: getConfig
+      tags: [config]
+      summary: Network, token and sponsor status
+      responses:
+        "200":
+          description: Configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppConfig"
+  /handles/{handle}:
+    get:
+      operationId: checkHandle
+      tags: [members]
+      summary: Check whether a handle can be claimed
+      parameters:
+        - name: handle
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+      responses:
+        "200":
+          description: Availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HandleAvailability"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /me:
+    get:
+      operationId: getMe
+      tags: [members]
+      summary: The signed-in member's profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateMe
+      tags: [members]
+      summary: Update the signed-in member's settings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemberUpdate"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /fx:
+    get:
+      operationId: getFxRates
+      tags: [config]
+      summary: Daily US dollar exchange rates for the currencies Gullak shows
+      responses:
+        "200":
+          description: Rates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FxRates"
+        "503":
+          description: No rates available yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /members:
+    post:
+      operationId: registerMember
+      tags: [members]
+      summary: Create the signed-in account's profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemberInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /members/{handle}:
+    get:
+      operationId: getMember
+      tags: [members]
+      summary: Look up a member by exact handle
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: handle
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 32
+      responses:
+        "200":
+          description: Member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberPublic"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /me/balance:
+    get:
+      operationId: getMyBalance
+      tags: [money]
+      summary: The signed-in account's AUSD balance
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Balance"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "502":
+          $ref: "#/components/responses/Upstream"
+  /me/activity:
+    get:
+      operationId: listMyActivity
+      tags: [money]
+      summary: Recent sends, receipts and add-money for the signed-in account
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Activity, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /activity/{id}:
+    get:
+      operationId: getActivityItem
+      tags: [money]
+      summary: One activity item (only visible to its sender or recipient)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Activity item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /transfers:
+    post:
+      operationId: createTransfer
+      tags: [money]
+      summary: Relay a signed AUSD transfer (EIP-3009); Gullak pays the gas
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferInput"
+      responses:
+        "200":
+          description: An earlier result for a retried authorization (same signed nonce); nothing new was sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityItem"
+        "201":
+          description: Settled on-chain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityItem"
+        "202":
+          description: Broadcast but not settled yet; poll the activity item until it is confirmed or failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "502":
+          $ref: "#/components/responses/Upstream"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /deposits:
+    post:
+      operationId: createDeposit
+      tags: [money]
+      summary: Add money (testnet; settled through Agora Instant Settlement)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepositInput"
+      responses:
+        "201":
+          description: Settled on-chain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityItem"
+        "202":
+          description: Broadcast but not settled yet; poll the activity item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "502":
+          $ref: "#/components/responses/Upstream"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+  /cashouts:
+    post:
+      operationId: createCashout
+      tags: [money]
+      summary: Pay out to a UPI ID, your own (cash out) or someone else's (send to UPI). Testnet - AUSD is settled through Agora Instant Settlement; the rupee payout is simulated. Errors mean no money moved.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CashoutInput"
+      responses:
+        "200":
+          description: An earlier result for a retried authorization (same signed nonce); nothing new was sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityItem"
+        "201":
+          description: Settled on-chain (payout simulated), or returned to the sender after a failed settlement (see payout.state)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityItem"
+        "202":
+          description: Broadcast but not settled yet; poll the activity item until it is confirmed or failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "502":
+          $ref: "#/components/responses/Upstream"
+        "503":
+          $ref: "#/components/responses/Unavailable"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing, invalid or expired sign-in token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Conflicts with existing state
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unprocessable:
+      description: Valid input that cannot be carried out (limits, balance)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    TooManyRequests:
+      description: Rate limited
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Upstream:
+      description: The blockchain or RPC failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unavailable:
+      description: Service not ready (for example the gas sponsor has no MON)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required: [error, code]
+    AppConfig:
+      type: object
+      properties:
+        chainId:
+          type: integer
+        chainName:
+          type: string
+        explorerUrl:
+          type: string
+        token:
+          $ref: "#/components/schemas/TokenInfo"
+        sponsor:
+          $ref: "#/components/schemas/SponsorStatus"
+        limits:
+          $ref: "#/components/schemas/Limits"
+      required: [chainId, chainName, explorerUrl, token, sponsor, limits]
+    TokenInfo:
+      type: object
+      properties:
+        symbol:
+          type: string
+        address:
+          type: string
+        decimals:
+          type: integer
+      required: [symbol, address, decimals]
+    SponsorStatus:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        address:
+          type: ["string", "null"]
+        monBalance:
+          type: ["string", "null"]
+          description: Wei, integer string
+        relayReady:
+          type: boolean
+        depositReady:
+          type: boolean
+        depositInventory:
+          type: ["string", "null"]
+          description: AUSD base units the add-money desk can still deliver
+        problem:
+          type: ["string", "null"]
+      required: [configured, address, monBalance, relayReady, depositReady, depositInventory, problem]
+    Limits:
+      type: object
+      properties:
+        maxSend:
+          type: string
+        dailySend:
+          type: string
+        maxDeposit:
+          type: string
+        dailyDeposit:
+          type: string
+      required: [maxSend, dailySend, maxDeposit, dailyDeposit]
+    HandleAvailability:
+      type: object
+      properties:
+        handle:
+          type: string
+        available:
+          type: boolean
+        reason:
+          type: ["string", "null"]
+      required: [handle, available, reason]
+    Member:
+      type: object
+      properties:
+        address:
+          type: string
+        handle:
+          type: string
+        displayName:
+          type: string
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2; sets the local currency shown next to dollar amounts.
+        createdAt:
+          type: string
+          format: date-time
+      required: [address, handle, displayName, country, createdAt]
+    MemberPublic:
+      type: object
+      properties:
+        address:
+          type: string
+        handle:
+          type: string
+        displayName:
+          type: string
+        country:
+          type: string
+      required: [address, handle, displayName, country]
+    MemberInput:
+      type: object
+      properties:
+        handle:
+          type: string
+          minLength: 3
+          maxLength: 20
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 40
+        country:
+          type: string
+          pattern: '^[A-Z]{2}$'
+      required: [handle, displayName]
+    MemberUpdate:
+      type: object
+      properties:
+        country:
+          type: string
+          pattern: '^[A-Z]{2}$'
+      required: [country]
+    FxRates:
+      type: object
+      properties:
+        base:
+          type: string
+          description: Always USD.
+        asOf:
+          type: string
+          format: date-time
+          description: When the source last published these rates (daily).
+        sourceName:
+          type: string
+        sourceUrl:
+          type: string
+        rates:
+          type: array
+          items:
+            $ref: "#/components/schemas/FxQuote"
+      required: [base, asOf, sourceName, sourceUrl, rates]
+    FxQuote:
+      type: object
+      properties:
+        currency:
+          type: string
+        rate:
+          type: number
+          description: Local units per US dollar.
+      required: [currency, rate]
+    Balance:
+      type: object
+      properties:
+        address:
+          type: string
+        amount:
+          type: string
+      required: [address, amount]
+    Counterparty:
+      type: object
+      properties:
+        address:
+          type: string
+        handle:
+          type: ["string", "null"]
+        displayName:
+          type: string
+      required: [address, handle, displayName]
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [send, receive, deposit, cashout]
+        status:
+          type: string
+          enum: [pending, confirmed, failed]
+        amount:
+          type: string
+        counterparty:
+          $ref: "#/components/schemas/Counterparty"
+        note:
+          type: ["string", "null"]
+        txHash:
+          type: ["string", "null"]
+        explorerUrl:
+          type: ["string", "null"]
+        blockNumber:
+          type: ["string", "null"]
+        settleMs:
+          type: ["integer", "null"]
+        error:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        confirmedAt:
+          type: ["string", "null"]
+          format: date-time
+        payout:
+          description: Cash-outs only.
+          oneOf:
+            - $ref: "#/components/schemas/Payout"
+            - type: "null"
+        fx:
+          description: Rate snapshot for the local value (recipient's currency for sends, INR for cash-outs). Null when dollars only.
+          oneOf:
+            - $ref: "#/components/schemas/FxQuote"
+            - type: "null"
+      required: [id, kind, status, amount, counterparty, note, txHash, explorerUrl, blockNumber, settleMs, error, createdAt, confirmedAt, payout, fx]
+    Payout:
+      type: object
+      properties:
+        destination:
+          type: string
+          description: Masked, e.g. "UPI mo•••@okhdfc".
+        recipientName:
+          type: ["string", "null"]
+          description: Send to UPI - the name the sender gave the recipient. Null for a cash-out to yourself.
+        state:
+          type: string
+          enum: [sending, settling, paid, refunding, refunded, not_sent]
+          description: >-
+            sending - AUSD on its way to the Gullak desk; settling - Instant Settlement swap in flight;
+            paid - settled (bank payout simulated); refunding - settlement failed, AUSD being returned;
+            refunded - the return is confirmed on-chain; not_sent - no money moved.
+        reference:
+          type: ["string", "null"]
+          description: Simulated bank-side payout reference.
+        settlementTxHash:
+          type: ["string", "null"]
+          description: The Agora Instant Settlement redeem swap.
+        settlementExplorerUrl:
+          type: ["string", "null"]
+        refundTxHash:
+          type: ["string", "null"]
+          description: The desk returning the AUSD after a failed settlement.
+        refundExplorerUrl:
+          type: ["string", "null"]
+      required: [destination, recipientName, state, reference, settlementTxHash, settlementExplorerUrl, refundTxHash, refundExplorerUrl]
+    TransferInput:
+      type: object
+      description: An EIP-3009 TransferWithAuthorization signed by `from` for AUSD on Monad testnet.
+      properties:
+        from:
+          type: string
+          pattern: '^0x[0-9a-fA-F]{40}$'
+        to:
+          type: string
+          pattern: '^0x[0-9a-fA-F]{40}$'
+        value:
+          type: string
+          pattern: '^[1-9][0-9]{0,17}$'
+        validAfter:
+          type: integer
+          minimum: 0
+        validBefore:
+          type: integer
+          minimum: 0
+        nonce:
+          type: string
+          pattern: '^0x[0-9a-fA-F]{64}$'
+        signature:
+          type: string
+          pattern: '^0x[0-9a-fA-F]{130}$'
+        note:
+          type: string
+          maxLength: 140
+      required: [from, to, value, validAfter, validBefore, nonce, signature]
+    DepositInput:
+      type: object
+      properties:
+        amount:
+          type: string
+          pattern: '^[1-9][0-9]{0,17}$'
+      required: [amount]
+    CashoutInput:
+      type: object
+      description: An EIP-3009 TransferWithAuthorization moving AUSD from the member to the Gullak desk, plus where to pay out. Retrying with the same signed authorization never pays twice.
+      properties:
+        from:
+          type: string
+          pattern: '^0x[0-9a-fA-F]{40}$'
+        to:
+          type: string
+          pattern: '^0x[0-9a-fA-F]{40}$'
+        value:
+          type: string
+          pattern: '^[1-9][0-9]{0,17}$'
+        validAfter:
+          type: integer
+          minimum: 0
+        validBefore:
+          type: integer
+          minimum: 0
+        nonce:
+          type: string
+          pattern: '^0x[0-9a-fA-F]{64}$'
+        signature:
+          type: string
+          pattern: '^0x[0-9a-fA-F]{130}$'
+        upiId:
+          type: string
+          minLength: 4
+          maxLength: 100
+        recipientName:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: Send to UPI - who the money is for (e.g. "Mom"). Omit for a cash-out to yourself.
+        note:
+          type: string
+          maxLength: 140
+      required: [from, to, value, validAfter, validBefore, nonce, signature, upiId]
