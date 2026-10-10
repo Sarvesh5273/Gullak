@@ -12,7 +12,7 @@ Built for **Monad Metropolis 2026** (Consumer Products & Payments).
 |---|---|
 | Web app | https://gullak-family-money-app.replit.app |
 | Android app (install page, APK, SHA-256) | https://gullak-family-money-app.replit.app/android |
-| Demo video (1:59) | *link added at submission* |
+| Demo video (1:59) | https://youtu.be/ykW18DHWzPQ |
 
 **Android:** you need Android 9 or newer, a 64-bit ARM phone, Google Play services, a screen lock and a Google account.
 1. Open the install page on the phone and install the APK.
@@ -40,7 +40,7 @@ Recorded on a real Android phone against the published app (10 Oct 2026), timed 
 
 ## Sponsor integrations
 
-- **Mera** (`@category-labs/mera`) is the whole account layer: there is no seed phrase, extension, email or password. In `artifacts/gullak/lib/keys.ts`:
+- **Mera** (`@category-labs/mera`) is the whole account layer: there is no seed phrase, extension, email or separate app password (the passkey is confirmed with the phone's screen lock). In `artifacts/gullak/lib/keys.ts`:
   - `createPasskeyWithPrfOutput` creates the passkey and reads PRF in one ceremony
   - `createSecp256k1SigningSession` signs without prompts inside a session that Gullak scopes
   - `getPasskeyPrfOutput` signs in and recovers the account
