@@ -6,6 +6,12 @@ Built for **Monad Metropolis 2026** (Consumer Products & Payments).
 
 > **Testnet demo. No real money moves.** AUSD and CTK are Agora's test tokens on Monad testnet, rupee amounts are indicative, and the UPI payout is simulated.
 
+| Home | Pay by @handle | Pay a UPI ID | Account |
+|:---:|:---:|:---:|:---:|
+| <img src="screenshots/1-home.png" width="200" alt="Home screen with a $5.00 balance in AUSD on Monad and three recent payments"> | <img src="screenshots/2-pay-handle.png" width="200" alt="Receipt: $10.00 sent to Dilip, settled in 1.00 s, network fee paid by Gullak"> | <img src="screenshots/3-pay-upi.png" width="200" alt="Receipt: $10.00 sent to Mom's UPI ID, done in 1.56 s, UPI payout simulated"> | <img src="screenshots/4-account.png" width="200" alt="Account screen: unlocked with a passkey, key kept only in app memory, $195 of $200 quick sends left"> |
+
+Screens from the recorded run on a real Android phone (published app, Monad testnet, 10 Oct 2026).
+
 ## Try it
 
 | | |
@@ -38,6 +44,54 @@ Recorded on a real Android phone against the published app (10 Oct 2026), timed 
 - first member-signed payment confirmed at 68.1 s
 - after clearing app data, the restored account 8.9 s after tapping "I already have one"
 
+## How it works
+
+```mermaid
+flowchart TB
+  subgraph Phone["Member's phone"]
+    direction LR
+    PK["Passkey<br/>confirmed with the screen lock"]
+    APP["Gullak app (Android, web)<br/>account key in app memory only"]
+    PK -- "Mera: PRF output,<br/>one ceremony" --> APP
+  end
+  subgraph Server["Gullak API (Node, Express)"]
+    direction LR
+    RELAY["Gas relayer"]
+    DESK["Settlement desk<br/>approved swapper"]
+    DB[("PostgreSQL<br/>members, ledger")]
+  end
+  subgraph Chain["Monad testnet"]
+    direction LR
+    AUSD["AUSD token"]
+    PAIR["Agora Instant Settlement<br/>CTK/AUSD pair"]
+  end
+  APP -- "signed EIP-3009 authorization<br/>(Mera signing session)" --> RELAY
+  RELAY -- "transferWithAuthorization,<br/>Gullak pays gas" --> AUSD
+  DESK -- "Add money: CTK to AUSD<br/>Send to UPI: AUSD to CTK" --> PAIR
+```
+
+Members sign every transfer on their phone; the API relays it and pays the gas. An @handle payment moves AUSD straight from sender to recipient. The desk takes part only in Add money and Send to UPI.
+
+**Send to UPI, step by step:**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor M as Member (Gullak app)
+  participant API as Gullak API and desk
+  participant AUSD as AUSD contract
+  participant IS as Instant Settlement pair
+  Note over M: Mera session signs an EIP-3009 authorization:<br/>exact amount, payable only to the desk,<br/>10-minute expiry, one-time nonce
+  M->>API: Send to UPI request with the signed authorization
+  Note over API: Each desk transaction is written to the<br/>ledger before it is broadcast
+  API->>AUSD: transferWithAuthorization (member to desk)
+  AUSD-->>API: mined
+  API->>IS: getAmountsOut, then swapExactTokensForTokens (AUSD to CTK)
+  IS-->>API: mined
+  API-->>M: Receipt with a simulated UPI payout reference
+  Note over API,IS: If the swap fails, the desk sends the same AUSD back.<br/>The app shows refunded only after that transaction is mined.
+```
+
 ## Sponsor integrations
 
 - **Mera** (`@category-labs/mera`) is the whole account layer: there is no seed phrase, extension, email or separate app password (the passkey is confirmed with the phone's screen lock). In `artifacts/gullak/lib/keys.ts`:
@@ -45,7 +99,7 @@ Recorded on a real Android phone against the published app (10 Oct 2026), timed 
   - `createSecp256k1SigningSession` signs without prompts inside a session that Gullak scopes
   - `getPasskeyPrfOutput` signs in and recovers the account
 - **Agora AUSD** is the balance and payment asset. Transfers use EIP-3009 `transferWithAuthorization`, so members never pay gas.
-- **Agora Instant Settlement** (CTK/AUSD pair) handles money in (Add money) and money out (Send to UPI / cash out) through a desk wallet that holds the approved-swapper role. On mainnet, Agora permits KYC-approved, whitelisted users to swap directly from their wallets; using a payout desk is Gullak's design choice.
+- **Agora Instant Settlement** (CTK/AUSD pair) handles money in (Add money) and money out (Send to UPI / cash out) through a desk wallet that holds the approved-swapper role. Agora permits KYC-approved, whitelisted users to swap directly from their wallets; using a payout desk is Gullak's design choice.
 
 **Session scope.** These limits are enforced by the app around the Mera session; they are not a cryptographic boundary.
 - Only sign-in statements and AUSD transfers sign without a prompt, up to $200 per session.
