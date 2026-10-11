@@ -45,7 +45,7 @@ Recorded on a real Android phone against the published app (10 Oct 2026), timed 
   - `createSecp256k1SigningSession` signs without prompts inside a session that Gullak scopes
   - `getPasskeyPrfOutput` signs in and recovers the account
 - **Agora AUSD** is the balance and payment asset. Transfers use EIP-3009 `transferWithAuthorization`, so members never pay gas.
-- **Agora Instant Settlement** (CTK/AUSD pair) handles money in (Add money) and money out (Send to UPI / cash out) through a desk wallet that holds the approved-swapper role. On mainnet that role requires KYC with Agora, so a licensed operator would do this, not end users.
+- **Agora Instant Settlement** (CTK/AUSD pair) handles money in (Add money) and money out (Send to UPI / cash out) through a desk wallet that holds the approved-swapper role. On mainnet, Agora permits KYC-approved, whitelisted users to swap directly from their wallets; using a payout desk is Gullak's design choice.
 
 **Session scope.** These limits are enforced by the app around the Mera session; they are not a cryptographic boundary.
 - Only sign-in statements and AUSD transfers sign without a prompt, up to $200 per session.
